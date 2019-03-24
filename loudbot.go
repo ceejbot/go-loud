@@ -18,7 +18,8 @@ var db *redis.Client
 var api *slack.Client
 var rtm *slack.RTM
 var channelsByName map[string]string
-var rediskey string
+var yellkey string
+var countkey string
 var emojiPattern *regexp.Regexp
 var slackUserPattern *regexp.Regexp
 var puncPattern *regexp.Regexp
@@ -28,7 +29,7 @@ var malcolmPattern *regexp.Regexp
 func makeRedis() (r *redis.Client) {
 	address, found := os.LookupEnv("REDIS_ADDRESS")
 	if !found {
-		address = "localhost:6379"
+		address = "127.0.0.1:6379"
 	}
 	log.Printf("using redis @ %s to store our data", address)
 	client := redis.NewClient(&redis.Options{Addr: address})
@@ -36,6 +37,7 @@ func makeRedis() (r *redis.Client) {
 }
 
 func makeChannelMap() {
+	log.Println("CONNECTED; ACQUIRING TARGETING DATA")
 	channelsByName = make(map[string]string)
 	channels, err := api.GetChannels(true)
 	if err != nil {
@@ -50,6 +52,7 @@ func makeChannelMap() {
 	if found {
 		yell(findChannelByName(address), "WITNESS THE POWER OF THIS FULLY-OPERATIONAL LOUDBOT.")
 	}
+	log.Println("LOUDBOT IS NOW OPERATIONAL")
 }
 
 func findChannelByName(name string) string {
@@ -89,22 +92,22 @@ func handleMessage(event *slack.MessageEvent) {
 
 	// Your basic shout.
 	remember(event.Text)
-	rejoinder, err := db.SRandMember(rediskey).Result()
+	rejoinder, err := db.SRandMember(yellkey).Result()
 	if err != nil {
 		log.Printf("error selecting yell: %s", err)
 		return
 	}
 	yell(event.Channel, rejoinder)
-	db.Incr(fmt.Sprintf("%s:count", rediskey)).Result()
+	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
 }
 
 func report(channel string) {
-	counter, err := db.Get(fmt.Sprintf("%s:count", rediskey)).Result()
+	counter, err := db.Get(fmt.Sprintf("%s:count", countkey)).Result()
 	if err != nil {
 		counter = "AN UNKNOWN NUMBER OF"
 	}
 
-	card, _ := db.SCard(rediskey).Result()
+	card, _ := db.SCard(yellkey).Result()
 
 	reply := fmt.Sprintf("I HAVE YELLED %s TIMES. ", counter)
 	reply += fmt.Sprintf("I HAVE %d THINGS TO YELL AT YOU.", card)
@@ -138,7 +141,7 @@ func isLoud(msg string) bool {
 }
 
 func remember(msg string) {
-	db.SAdd(rediskey, msg).Result()
+	db.SAdd(yellkey, msg).Result()
 }
 
 func yell(channel string, msg string) {
@@ -159,21 +162,23 @@ func yell(channel string, msg string) {
 }
 
 func main() {
-	err := godotenv.Load(".env", "../../.env")
+	err := godotenv.Load(".env")
 
 	slacktoken, ok := os.LookupEnv("SLACK_TOKEN")
 	if !ok {
 		log.Fatal("You must provide an access token in SLACK_TOKEN")
 	}
 
-	var found bool
-	rediskey, found = os.LookupEnv("REDIS_KEY")
+	rprefix, found := os.LookupEnv("REDIS_PREFIX")
 	if !found {
-		rediskey = "LOUDBOT_YELLS"
+		rprefix = "LOUDBOT"
 	}
 
+	yellkey = fmt.Sprintf("%s:YELLS", rprefix)
+	countkey = fmt.Sprintf("%s:COUNT", rprefix)
+
 	db = makeRedis()
-	card, err := db.SCard(rediskey).Result()
+	card, err := db.SCard(yellkey).Result()
 	if err != nil {
 		// We fail NOW if we can't find our DB.
 		log.Fatal(err)
@@ -195,28 +200,27 @@ func main() {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
 			makeChannelMap()
-			break
 
 		case *slack.MessageEvent:
 			// fmt.Printf("Message: %v\n", ev)
 			handleMessage(ev)
-			break
 
 		case *slack.PresenceChangeEvent:
 			// fmt.Printf("Presence Change: %v\n", ev)
-			break
 
 		case *slack.RTMError:
 			fmt.Printf("Error: %s\n", ev.Error())
-			break
 
 		case *slack.InvalidAuthEvent:
 			log.Fatal("Invalid credentials")
-			break
+
+		case *slack.ConnectionErrorEvent:
+			fmt.Printf("Event: %v\n", msg)
+			log.Fatal("Can't connect")
 
 		default:
 			// Ignore other events..
-			// fmt.Printf("Event: %v\n", msg.Data.type)
+			// fmt.Printf("Event: %v\n", msg)
 		}
 	}
 }

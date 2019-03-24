@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -9,26 +10,33 @@ import (
 )
 
 func main() {
-	godotenv.Load(".env", "../../.env")
+	godotenv.Load("../../.env")
 
-	rediskey, found := os.LookupEnv("REDIS_KEY")
+	prefix, found := os.LookupEnv("REDIS_PREFIX")
 	if !found {
-		rediskey = "LOUDBOT_YELLS"
+		prefix = "LOUDBOT:YELLS"
 	}
+	rkey := fmt.Sprintf("%s:YELLS", prefix)
 
-	db := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	address, found := os.LookupEnv("REDIS_ADDRESS")
+	if !found {
+		address = "127.0.0.1:6379"
+	}
+	log.Printf("using redis @ %s to store our data", address)
+
+	db := redis.NewClient(&redis.Options{Addr: address})
 
 	pipe := db.Pipeline()
 	for _, seed := range seeds {
-		pipe.SAdd(rediskey, seed)
+		pipe.SAdd(rkey, seed)
 	}
 	_, err := pipe.Exec()
 	if err != nil {
-		log.Println("Could not connect to redis!")
+		log.Println("Could not write to redis!")
 		log.Fatal(err)
 	}
 
-	log.Printf("Added %d shouts to the database\n", len(seeds))
+	log.Printf("Added %d shouts to the database at %s\n", len(seeds), rkey)
 }
 
 var seeds = [...]string{
@@ -61,10 +69,11 @@ var seeds = [...]string{
 	"PEOPLE GOT MAD",
 	"QUOD ERAT DEMONSTRANDUM",
 	"SENPAI NOTICEMENT",
-	"THE EVIL THAT MEN DO LIVES AFTER THEM; THE GOOD IS OFT INTERRED WITH THEIR BONES",
+	"STAY ON TARGET! STAY ON TARGET!",
+	"THE EVIL THAT MEN DO LIVES AFTER THEM; THE GOOD IS OFT INTERRED WITH THEIR BONES. WHAT? I'M CULTURED.",
 	"THE LOUDS RETURN",
-	"THE PONY ATE MY SANDWICH AND NOW I'M HUNGRY AND THE PONY IS SICK BECAUSE IT'S ALLERGIC TO TUNA",
 	"THEY TOLD ME TO USE CAPITALS SO JUNEAU HARTFORD SACRAMENTO PIERRE COLUMBIA HARRISBURG AND YOUR FACE",
+	"YER A WIZARD HARRY",
 	"YOU ARE INSIDE A BUILDING, A WELL HOUSE FOR A LARGE SPRING. THERE ARE SOME KEYS ON THE GROUND HERE. THERE IS A SHINY BRASS LAMP NEARBY. THERE IS FOOD HERE. THERE IS A BOTTLE OF WATER HERE.",
 	"YOU ARE STANDING AT THE END OF A ROAD BEFORE A SMALL BRICK BUILDING. AROUND YOU IS A FOREST. A SMALL STREAM FLOWS OUT OF THE BUILDING AND DOWN A GULLY.",
 	"YOU DO NOT TRUST USER INPUT",
