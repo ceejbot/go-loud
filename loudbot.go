@@ -13,6 +13,8 @@ import (
 	"github.com/nlopes/slack"
 )
 
+var specials []func(event *slack.MessageEvent) bool
+
 // Slacking off with global vars
 var db *redis.Client
 var api *slack.Client
@@ -64,44 +66,12 @@ func findChannelByName(name string) string {
 	return ""
 }
 
-func handleMessage(event *slack.MessageEvent) {
-	if event.SubType == "bot_message" {
-		return
+// Special handlers. They return true if they acted on a message.
+func report(event *slack.MessageEvent) bool {
+	if !strings.EqualFold(event.Text, "LOUDBOT REPORT") {
+		return false
 	}
 
-	if strings.EqualFold(event.Text, "LOUDBOT REPORT") {
-		report(event.Channel)
-		return
-	}
-
-	if fuckityPattern.MatchString(event.Text) {
-		log.Println("FUCKITY BYE!")
-		yell(event.Channel, "https://cldup.com/NtvUeudPtg.gif")
-		return
-	}
-
-	if malcolmPattern.MatchString(event.Text) {
-		log.Println("MALCOLM RUNS!")
-		yell(event.Channel, "https://cldup.com/w_exMqXKlT.gif")
-		return
-	}
-
-	if !isLoud(event.Text) {
-		return
-	}
-
-	// Your basic shout.
-	remember(event.Text)
-	rejoinder, err := db.SRandMember(yellkey).Result()
-	if err != nil {
-		log.Printf("error selecting yell: %s", err)
-		return
-	}
-	yell(event.Channel, rejoinder)
-	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
-}
-
-func report(channel string) {
 	counter, err := db.Get(fmt.Sprintf("%s:count", countkey)).Result()
 	if err != nil {
 		counter = "AN UNKNOWN NUMBER OF"
@@ -112,8 +82,48 @@ func report(channel string) {
 	reply := fmt.Sprintf("I HAVE YELLED %s TIMES. ", counter)
 	reply += fmt.Sprintf("I HAVE %d THINGS TO YELL AT YOU.", card)
 
-	yell(channel, reply)
+	yell(event.Channel, reply)
+	return true
 }
+
+func fuckityBye(event *slack.MessageEvent) bool {
+	if !fuckityPattern.MatchString(event.Text) {
+		return false
+	}
+
+	log.Println("FUCKITY BYE!")
+	yell(event.Channel, "https://cldup.com/NtvUeudPtg.gif")
+	return true
+}
+
+func summonTheMalc(event *slack.MessageEvent) bool {
+	if !malcolmPattern.MatchString(event.Text) {
+		return false
+	}
+
+	log.Println("MALCOLM RUNS!")
+	yell(event.Channel, "https://cldup.com/w_exMqXKlT.gif")
+	return true
+}
+
+func yourBasicShout(event *slack.MessageEvent) bool {
+	if !isLoud(event.Text) {
+		return false
+	}
+
+	// Your basic shout.
+	rejoinder, err := db.SRandMember(yellkey).Result()
+	if err != nil {
+		log.Printf("error selecting yell: %s", err)
+		return false
+	}
+	yell(event.Channel, rejoinder)
+	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
+	db.SAdd(yellkey, event.Text).Result()
+	return true
+}
+
+// End special handlers
 
 func stripWhitespace(str string) string {
 	var b strings.Builder
@@ -140,10 +150,6 @@ func isLoud(msg string) bool {
 	return strings.ToUpper(input) == input
 }
 
-func remember(msg string) {
-	db.SAdd(yellkey, msg).Result()
-}
-
 func yell(channel string, msg string) {
 	channelID, _, err := api.PostMessage(channel,
 		slack.MsgOptionText(msg, false),
@@ -159,6 +165,18 @@ func yell(channel string, msg string) {
 		return
 	}
 	log.Printf("YELLED to %s: `%s`", channelID, msg)
+}
+
+func handleMessage(event *slack.MessageEvent) {
+	if event.SubType == "bot_message" {
+		return
+	}
+
+	for _, handler := range specials {
+		if handler(event) {
+			break
+		}
+	}
 }
 
 func main() {
@@ -186,11 +204,20 @@ func main() {
 	log.Printf("LOUDIE HAS %d THINGS TO YELL", card)
 
 	// Regular expressions we'll use a whole lot.
+	// Should probably be in an intialization function to the side.
 	emojiPattern = regexp.MustCompile(`:[^\t\n\f\r ]+:`)
 	slackUserPattern = regexp.MustCompile(`<@[^\t\n\f\r ]+>`)
 	puncPattern = regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	fuckityPattern = regexp.MustCompile(`(?i)FUCKITY *BYE`)
+	fuckityPattern = regexp.MustCompile(`(?i)FUCKITY.?BYE`)
 	malcolmPattern = regexp.MustCompile(`(?i)MALCOLM +TUCKER`)
+
+	// Our special handlers. If they handled a message, they return true.
+	specials = []func(event *slack.MessageEvent) bool{
+		report,
+		fuckityBye,
+		summonTheMalc,
+		yourBasicShout,
+	}
 
 	api = slack.New(slacktoken)
 	rtm := api.NewRTM()
