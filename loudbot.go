@@ -189,7 +189,7 @@ func main() {
 
 	rprefix, found := os.LookupEnv("REDIS_PREFIX")
 	if !found {
-		rprefix = "LOUDBOT"
+		rprefix = "LB"
 	}
 
 	yellkey = fmt.Sprintf("%s:YELLS", rprefix)

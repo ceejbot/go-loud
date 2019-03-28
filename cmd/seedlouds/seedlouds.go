@@ -12,13 +12,12 @@ import (
 func main() {
 	loaded := godotenv.Load("../../.env")
 	if loaded != nil {
-		log.Printf("Can't find config, %s", loaded)
-		log.Fatal("bailing")
+		log.Printf("No .env file found; using defaults: %s", loaded)
 	}
 
 	prefix, found := os.LookupEnv("REDIS_PREFIX")
 	if !found {
-		prefix = "LOUDBOT"
+		prefix = "LB"
 	}
 	rkey := fmt.Sprintf("%s:YELLS", prefix)
 

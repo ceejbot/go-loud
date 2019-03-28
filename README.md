@@ -15,7 +15,7 @@ Configuration is injected from environment variables. A backing redis is require
 REDIS_ADDRESS=localhost:6379
 SLACK_TOKEN=<your slack api token>
 WELCOME_CHANNEL=general # optional; loudie will toast here
-REDIS_PREFIX=LOUDBOT # defaults to `LOUDBOT`; namespace for redis keys
+REDIS_PREFIX=LOUDBOT # defaults to `LB`; namespace for redis keys
 ```
 
 You can skip this step if you have another way to provide the required env vars.
@@ -36,6 +36,8 @@ cd ../..
 go build
 ./go-loud # loudie is now running
 ```
+
+There's a dockerfile if you prefer not to trust your operating system.
 
 ## LICENSE
 
