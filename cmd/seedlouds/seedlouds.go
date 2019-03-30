@@ -2,17 +2,28 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 )
 
+func readLines(fpath string) []string {
+	content, err := ioutil.ReadFile(fpath)
+	if err != nil {
+		log.Fatalf("Can't find %s", fpath)
+	}
+	lines := strings.Split(strings.Trim(string(content), "\n"), "\n")
+	return lines
+}
+
 func main() {
 	loaded := godotenv.Load("../../.env")
 	if loaded != nil {
-		log.Printf("No .env file found; using defaults: %s", loaded)
+		log.Println("No .env file found; using defaults")
 	}
 
 	prefix, found := os.LookupEnv("REDIS_PREFIX")
@@ -29,6 +40,8 @@ func main() {
 
 	db := redis.NewClient(&redis.Options{Addr: address})
 
+	seeds := readLines("SEEDS")
+
 	pipe := db.Pipeline()
 	for _, seed := range seeds {
 		pipe.SAdd(rkey, seed)
@@ -40,50 +53,4 @@ func main() {
 	}
 
 	log.Printf("Added %d shouts to the database at %s\n", len(seeds), rkey)
-}
-
-var seeds = [...]string{
-	"A N G E R Y",
-	"ALERT ALERT ONE OF YOUR DEPENDENCIES DOESN'T HAVE A README ALERT ALERT",
-	"ALL-CAPS IS YOUR PASSPORT",
-	"EXPLAIN MAGNETS NOW",
-	"EXTERMINATE EXTERMINATE",
-	"FAMOUS LAST WORDS",
-	"GET ON IT",
-	"HAVE NO FEAR LOUDBOT IS HERE",
-	"HUGE MISTAKE",
-	"I LIKE YOUR OPTIMISM",
-	"IMPORTANT ANNOUNCEMENT",
-	"INSENSITIVE AS ALWAYS I SEE",
-	"IT'S ALIVE!",
-	"JUST A SUGGESTION.",
-	"KILL ALL HUMANS",
-	"KITTEN ALERT",
-	"LIES",
-	"MAKE LIFE TAKE THE LEMONS BACK. DEMAND TO SEE LIFE’S MANAGER.",
-	"MASTER HAS PRESENTED DOBBY WITH A SOCK",
-	"MATH IS HARD",
-	"MAY I HAVE YOUR ATTENTION PLEASE",
-	"MY BRAND",
-	"MY CAT'S BREATH SMELLS LIKE CAT FOOD",
-	"OXFORD COMMA OR BUST",
-	"PATCHES WELCOME",
-	"PC LOAD LETTER!?",
-	"PEOPLE GOT MAD",
-	"QUOD ERAT DEMONSTRANDUM",
-	"SENPAI NOTICEMENT",
-	"STAY ON TARGET! STAY ON TARGET!",
-	"THE EVIL THAT MEN DO LIVES AFTER THEM; THE GOOD IS OFT INTERRED WITH THEIR BONES. WHAT? I'M CULTURED.",
-	"THE LOUDS RETURN",
-	"THEY TOLD ME TO USE CAPITALS SO JUNEAU HARTFORD SACRAMENTO PIERRE COLUMBIA HARRISBURG AND YOUR FACE",
-	"YER A WIZARD HARRY",
-	"YOU ARE INSIDE A BUILDING, A WELL HOUSE FOR A LARGE SPRING. THERE ARE SOME KEYS ON THE GROUND HERE. THERE IS A SHINY BRASS LAMP NEARBY. THERE IS FOOD HERE. THERE IS A BOTTLE OF WATER HERE.",
-	"YOU ARE STANDING AT THE END OF A ROAD BEFORE A SMALL BRICK BUILDING. AROUND YOU IS A FOREST. A SMALL STREAM FLOWS OUT OF THE BUILDING AND DOWN A GULLY.",
-	"YOU DO NOT TRUST USER INPUT",
-	"YOU DO OR YOU DO NOT - THERE IS NO TRY",
-	"YOU HAD ONE JOB",
-	"YOU'RE A VERY POOR CONVERSATIONALIST",
-	"YOUR ARGUMENT IS INVALID",
-	"YOUR STARTUP IS DRIVING ME NUTS",
-	"ZFS IS THE BEST",
 }

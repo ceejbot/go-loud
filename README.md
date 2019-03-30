@@ -21,7 +21,7 @@ REDIS_PREFIX=LOUDBOT # defaults to `LB`; namespace for redis keys
 You can skip this step if you have another way to provide the required env vars.
 
 
-5. Now you'll want to seed the yell database. If you like, look at `seedlouds.go` and add or remove yells to suit your team.
+5. Now you'll want to seed the yell database. If you like, look at `SEEDS` and add or remove yells to suit your team.
 
 ```sh
 cd cmd/seedlouds
@@ -38,6 +38,13 @@ go build
 ```
 
 There's a dockerfile if you prefer not to trust your operating system.
+
+## TODO
+
+• Read list of custom emoji & react to messages sometimes.
+• More Malcolm Tucker, but behind a feature flag.
+• Tool to dump redis db to a text file.
+• More random jokes.
 
 ## LICENSE
 
