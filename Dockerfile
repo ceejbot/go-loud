@@ -16,6 +16,6 @@ RUN mkdir /loudbot
 WORKDIR /loudbot
 COPY . .
 RUN go install -v ./...
-RUN seedlouds
+# RUN seedlouds
 
-CMD ["go-loud"]
+CMD ["seedlouds && go-loud"]

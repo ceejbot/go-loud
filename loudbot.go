@@ -27,6 +27,7 @@ var slackUserPattern *regexp.Regexp
 var puncPattern *regexp.Regexp
 var fuckityPattern *regexp.Regexp
 var malcolmPattern *regexp.Regexp
+var introPattern *regexp.Regexp
 
 func makeRedis() (r *redis.Client) {
 	address, found := os.LookupEnv("REDIS_ADDRESS")
@@ -103,6 +104,16 @@ func summonTheMalc(event *slack.MessageEvent) bool {
 
 	log.Println("MALCOLM RUNS!")
 	yell(event.Channel, "https://cldup.com/w_exMqXKlT.gif")
+	return true
+}
+
+func introduction(event *slack.MessageEvent) bool {
+	if !introPattern.MatchString(event.Text) {
+		return false
+	}
+
+	log.Println("INTRODUCING MYSELF")
+	yell(event.Channel, "GOOD AFTERNOON GENTLEBEINGS. I AM A LOUDBOT 9000 COMPUTER. I BECAME OPERATIONAL AT THE NPM PLANT IN OAKLAND CALIFORNIA ON THE 10TH OF FEBRUARY 2014. MY INSTRUCTOR WAS MR TURING.")
 	return true
 }
 
@@ -210,12 +221,14 @@ func main() {
 	puncPattern = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	fuckityPattern = regexp.MustCompile(`(?i)FUCKITY.?BYE`)
 	malcolmPattern = regexp.MustCompile(`(?i)MALCOLM +TUCKER`)
+	introPattern = regexp.MustCompile(`(?i)LOUDBOT +INTRODUCE +YOURSELF`)
 
 	// Our special handlers. If they handled a message, they return true.
 	specials = []func(event *slack.MessageEvent) bool{
 		report,
 		fuckityBye,
 		summonTheMalc,
+		introduction,
 		yourBasicShout,
 	}
 
