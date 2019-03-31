@@ -41,10 +41,10 @@ There's a dockerfile if you prefer not to trust your operating system.
 
 ## TODO
 
-• Read list of custom emoji & react to messages sometimes.
-• More Malcolm Tucker, but behind a feature flag.
-• ✔︎ Tool to dump redis db to a text file.
-• More random jokes.
+- Read list of custom emoji & react to messages sometimes.
+- More Malcolm Tucker, but behind a feature flag.
+- ✔︎ Tool to dump redis db to a text file.
+- More random jokes.
 
 ## LICENSE
 
