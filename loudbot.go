@@ -154,7 +154,7 @@ func isLoud(msg string) bool {
 	input = slackUserPattern.ReplaceAllLiteralString(input, "")
 	input = puncPattern.ReplaceAllLiteralString(input, "")
 
-	if len(input) == 0 {
+	if len(input) < 3 {
 		return false
 	}
 
@@ -166,7 +166,6 @@ func yell(channel string, msg string) {
 		slack.MsgOptionText(msg, false),
 		slack.MsgOptionUsername("LOUDBOT"),
 		slack.MsgOptionPostMessageParameters(slack.PostMessageParameters{
-			IconURL:     "https://cldup.com/XjiGTeey6i.png",
 			UnfurlLinks: true,
 			UnfurlMedia: true,
 		}))

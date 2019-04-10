@@ -17,6 +17,5 @@ WORKDIR /loudbot
 COPY . .
 RUN apk update && apk add --no-cache git
 RUN go install -v ./...
-# RUN seedlouds
 
 CMD ["seedlouds && go-loud"]
