@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/go-redis/redis"
+	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/joho/godotenv"
 	"github.com/nlopes/slack"
 )
@@ -153,6 +154,7 @@ func isLoud(msg string) bool {
 	input = emojiPattern.ReplaceAllLiteralString(input, "")
 	input = slackUserPattern.ReplaceAllLiteralString(input, "")
 	input = puncPattern.ReplaceAllLiteralString(input, "")
+	input = strip.StripTags(input)
 
 	if len(input) < 3 {
 		return false
