@@ -18,4 +18,4 @@ COPY . .
 RUN apk update && apk add --no-cache git
 RUN go install -v ./...
 
-CMD ["seedlouds && go-loud"]
+CMD ["go-loud"]
