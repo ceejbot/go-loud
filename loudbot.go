@@ -192,7 +192,7 @@ func handleMessage(event *slack.MessageEvent) {
 }
 
 func main() {
-	err := godotenv.Load(".env")
+	godotenv.Load(".env")
 
 	slacktoken, ok := os.LookupEnv("SLACK_TOKEN")
 	if !ok {
