@@ -54,7 +54,7 @@ func makeChannelMap() {
 
 	address, found := os.LookupEnv("WELCOME_CHANNEL")
 	if found {
-		yell(findChannelByName(address), "WITNESS THE POWER OF THIS FULLY-OPERATIONAL LOUDBOT.")
+		yellWithoutPrompt(findChannelByName(address), "WITNESS THE POWER OF THIS FULLY-OPERATIONAL LOUDBOT.")
 	}
 	log.Println("LOUDBOT IS NOW OPERATIONAL")
 }
@@ -84,7 +84,7 @@ func report(event *slack.MessageEvent) bool {
 	reply := fmt.Sprintf("I HAVE YELLED %s TIMES. ", counter)
 	reply += fmt.Sprintf("I HAVE %d THINGS TO YELL AT YOU.", card)
 
-	yell(event.Channel, reply)
+	yell(event, reply)
 	return true
 }
 
@@ -94,7 +94,7 @@ func fuckityBye(event *slack.MessageEvent) bool {
 	}
 
 	log.Println("FUCKITY BYE!")
-	yell(event.Channel, "https://cldup.com/NtvUeudPtg.gif")
+	yell(event, "https://cldup.com/NtvUeudPtg.gif")
 	return true
 }
 
@@ -104,7 +104,7 @@ func summonTheMalc(event *slack.MessageEvent) bool {
 	}
 
 	log.Println("MALCOLM RUNS!")
-	yell(event.Channel, "https://cldup.com/w_exMqXKlT.gif")
+	yell(event, "https://cldup.com/w_exMqXKlT.gif")
 	return true
 }
 
@@ -114,7 +114,7 @@ func introduction(event *slack.MessageEvent) bool {
 	}
 
 	log.Println("INTRODUCING MYSELF")
-	yell(event.Channel, "GOOD AFTERNOON GENTLEBEINGS. I AM A LOUDBOT 9000 COMPUTER. I BECAME OPERATIONAL AT THE NPM PLANT IN OAKLAND CALIFORNIA ON THE 10TH OF FEBRUARY 2014. MY INSTRUCTOR WAS MR TURING.")
+	yell(event, "GOOD AFTERNOON GENTLEBEINGS. I AM A LOUDBOT 9000 COMPUTER. I BECAME OPERATIONAL AT THE NPM PLANT IN OAKLAND CALIFORNIA ON THE 10TH OF FEBRUARY 2014. MY INSTRUCTOR WAS MR TURING.")
 	return true
 }
 
@@ -129,7 +129,8 @@ func yourBasicShout(event *slack.MessageEvent) bool {
 		log.Printf("error selecting yell: %s", err)
 		return false
 	}
-	yell(event.Channel, rejoinder)
+
+	yell(event, rejoinder)
 	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
 	db.SAdd(yellkey, event.Text).Result()
 	return true
@@ -163,7 +164,24 @@ func isLoud(msg string) bool {
 	return strings.ToUpper(input) == input
 }
 
-func yell(channel string, msg string) {
+func yell(event *slack.MessageEvent, msg string) {
+	channelID, _, err := api.PostMessage(event.Channel,
+		slack.MsgOptionText(msg, false),
+		slack.MsgOptionUsername("LOUDBOT"),
+		slack.MsgOptionTS(event.ThreadTimestamp),
+		slack.MsgOptionPostMessageParameters(slack.PostMessageParameters{
+			UnfurlLinks: true,
+			UnfurlMedia: true,
+		}))
+
+	if err != nil {
+		log.Printf("%s\n", err)
+		return
+	}
+	log.Printf("YELLED to %s: `%s`", channelID, msg)
+}
+
+func yellWithoutPrompt(channel string, msg string) {
 	channelID, _, err := api.PostMessage(channel,
 		slack.MsgOptionText(msg, false),
 		slack.MsgOptionUsername("LOUDBOT"),
