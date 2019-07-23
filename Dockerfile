@@ -16,6 +16,7 @@ RUN mkdir /loudbot
 WORKDIR /loudbot
 COPY . .
 RUN apk update && apk add --no-cache git
+RUN apk update && apk add --no-cache bash
 RUN go install -v ./...
 
-CMD ["go-loud"]
+CMD ["bash", "seed-and-go.sh"]

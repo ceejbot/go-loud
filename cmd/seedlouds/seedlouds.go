@@ -11,6 +11,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var rkey string
+
 func readLines(fpath string) []string {
 	content, err := ioutil.ReadFile(fpath)
 	if err != nil {
@@ -18,6 +20,22 @@ func readLines(fpath string) []string {
 	}
 	lines := strings.Split(strings.Trim(string(content), "\n"), "\n")
 	return lines
+}
+
+func seedFromFile(fpath string, db *redis.Client) {
+	seeds := readLines(fpath)
+
+	pipe := db.Pipeline()
+	for _, seed := range seeds {
+		pipe.SAdd(rkey, seed)
+	}
+	_, err := pipe.Exec()
+	if err != nil {
+		log.Println("Could not write to redis!")
+		log.Fatal(err)
+	}
+
+	log.Printf("Added %d shouts from %s to the database at %s\n", len(seeds), fpath, rkey)
 }
 
 func main() {
@@ -30,7 +48,7 @@ func main() {
 	if !found {
 		prefix = "LB"
 	}
-	rkey := fmt.Sprintf("%s:YELLS", prefix)
+	rkey = fmt.Sprintf("%s:YELLS", prefix)
 
 	address, found := os.LookupEnv("REDIS_ADDRESS")
 	if !found {
@@ -39,18 +57,6 @@ func main() {
 	log.Printf("using redis @ %s to store our data", address)
 
 	db := redis.NewClient(&redis.Options{Addr: address})
-
-	seeds := readLines("SEEDS")
-
-	pipe := db.Pipeline()
-	for _, seed := range seeds {
-		pipe.SAdd(rkey, seed)
-	}
-	_, err := pipe.Exec()
-	if err != nil {
-		log.Println("Could not write to redis!")
-		log.Fatal(err)
-	}
-
-	log.Printf("Added %d shouts to the database at %s\n", len(seeds), rkey)
+	seedFromFile("SEEDS", db)
+	seedFromFile("SYSTEMANTICS", db)
 }
