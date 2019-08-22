@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/go-redis/redis"
+	"github.com/go-resty/resty/v2"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/joho/godotenv"
 	"github.com/nlopes/slack"
@@ -115,6 +117,30 @@ func introduction(event *slack.MessageEvent) bool {
 
 	log.Println("INTRODUCING MYSELF")
 	yell(event, "GOOD AFTERNOON GENTLEBEINGS. I AM A LOUDBOT 9000 COMPUTER. I BECAME OPERATIONAL AT THE NPM PLANT IN OAKLAND CALIFORNIA ON THE 10TH OF FEBRUARY 2014. MY INSTRUCTOR WAS MR TURING.")
+	return true
+}
+
+func catfact(event *slack.MessageEvent) bool {
+	if !strings.EqualFold(event.Text, "CAT FACT") {
+		return false
+	}
+
+	client := resty.New()
+	resp, err := client.R().SetHeader("Accept", "application/json").Get("https://some-random-api.ml/facts/cat")
+	if err != nil {
+		return false
+	}
+
+	type CatFact struct {
+		Fact string
+	}
+	var fact CatFact
+	err2 := json.Unmarshal(resp.Body(), &fact)
+	if err2 != nil {
+		return false
+	}
+
+	yell(event, strings.ToUpper(fact.Fact))
 	return true
 }
 
@@ -248,6 +274,7 @@ func main() {
 		fuckityBye,
 		summonTheMalc,
 		introduction,
+		catfact,
 		yourBasicShout,
 	}
 
