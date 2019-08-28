@@ -11,8 +11,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var rkey string
-
 func readLines(fpath string) []string {
 	content, err := ioutil.ReadFile(fpath)
 	if err != nil {
@@ -22,7 +20,7 @@ func readLines(fpath string) []string {
 	return lines
 }
 
-func seedFromFile(fpath string, db *redis.Client) {
+func seedFromFile(fpath string, rkey string, db *redis.Client) {
 	seeds := readLines(fpath)
 
 	pipe := db.Pipeline()
@@ -48,6 +46,8 @@ func main() {
 	if !found {
 		prefix = "LB"
 	}
+
+	var rkey string
 	rkey = fmt.Sprintf("%s:YELLS", prefix)
 
 	address, found := os.LookupEnv("REDIS_ADDRESS")
@@ -57,6 +57,8 @@ func main() {
 	log.Printf("using redis @ %s to store our data", address)
 
 	db := redis.NewClient(&redis.Options{Addr: address})
-	seedFromFile("SEEDS", db)
-	seedFromFile("SYSTEMANTICS", db)
+	seedFromFile("SEEDS", rkey, db)
+	seedFromFile("SYSTEMANTICS", rkey, db)
+	rkey = fmt.Sprintf("%s:CATS", prefix)
+	seedFromFile("CATS", rkey, db)
 }

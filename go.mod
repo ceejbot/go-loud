@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	github.com/go-redis/redis v6.15.2+incompatible
-	github.com/go-resty/resty/v2 v2.0.0
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grokify/html-strip-tags-go v0.0.0-20180907063347-e9e44961e26f
 	github.com/joho/godotenv v1.3.0
@@ -15,4 +14,5 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
+	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 )

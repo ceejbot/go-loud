@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"unicode"
 
 	"github.com/go-redis/redis"
-	"github.com/go-resty/resty/v2"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/joho/godotenv"
 	"github.com/nlopes/slack"
@@ -25,6 +23,7 @@ var rtm *slack.RTM
 var channelsByName map[string]string
 var yellkey string
 var countkey string
+var catkey string
 var emojiPattern *regexp.Regexp
 var slackUserPattern *regexp.Regexp
 var puncPattern *regexp.Regexp
@@ -125,22 +124,14 @@ func catfact(event *slack.MessageEvent) bool {
 		return false
 	}
 
-	client := resty.New()
-	resp, err := client.R().SetHeader("Accept", "application/json").Get("https://some-random-api.ml/facts/cat")
+	fact, err := db.SRandMember(catkey).Result()
 	if err != nil {
+		log.Printf("error selecting cat yell: %s", err)
 		return false
 	}
 
-	type CatFact struct {
-		Fact string
-	}
-	var fact CatFact
-	err2 := json.Unmarshal(resp.Body(), &fact)
-	if err2 != nil {
-		return false
-	}
-
-	yell(event, strings.ToUpper(fact.Fact))
+	yell(event, strings.ToUpper(fact))
+	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
 	return true
 }
 
@@ -249,6 +240,7 @@ func main() {
 	}
 
 	yellkey = fmt.Sprintf("%s:YELLS", rprefix)
+	catkey = fmt.Sprintf("%s:CATS", rprefix)
 	countkey = fmt.Sprintf("%s:COUNT", rprefix)
 
 	db = makeRedis()
