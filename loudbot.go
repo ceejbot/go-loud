@@ -55,7 +55,7 @@ func makeChannelMap() {
 
 	address, found := os.LookupEnv("WELCOME_CHANNEL")
 	if found {
-		yellWithoutPrompt(findChannelByName(address), "WITNESS THE POWER OF THIS FULLY-OPERATIONAL LOUDBOT.")
+		yellWithoutPrompt(findChannelByName(address), "YOU MAY FIRE WHEN READY.")
 	}
 	log.Println("LOUDBOT IS NOW OPERATIONAL")
 }

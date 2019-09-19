@@ -36,6 +36,22 @@ func seedFromFile(fpath string, rkey string, db *redis.Client) {
 	log.Printf("Added %d shouts from %s to the database at %s\n", len(seeds), fpath, rkey)
 }
 
+func removeFromFile(fpath string, rkey string, db *redis.Client) {
+	seeds := readLines(fpath)
+
+	pipe := db.Pipeline()
+	for _, seed := range seeds {
+		pipe.SRem(rkey, seed)
+	}
+	_, err := pipe.Exec()
+	if err != nil {
+		log.Println("Could not write to redis!")
+		log.Fatal(err)
+	}
+
+	log.Printf("Removed %d shouts from %s to the database at %s\n", len(seeds), fpath, rkey)
+}
+
 func main() {
 	loaded := godotenv.Load("../../.env")
 	if loaded != nil {
@@ -57,8 +73,9 @@ func main() {
 	log.Printf("using redis @ %s to store our data", address)
 
 	db := redis.NewClient(&redis.Options{Addr: address})
+	removeFromFile("SYSTEMANTICS", rkey, db)
 	seedFromFile("SEEDS", rkey, db)
-	seedFromFile("SYSTEMANTICS", rkey, db)
+	seedFromFile("STAR_FIGHTING", rkey, db)
 	rkey = fmt.Sprintf("%s:CATS", prefix)
 	seedFromFile("CATS", rkey, db)
 }
