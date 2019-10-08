@@ -3,6 +3,7 @@ module github.com/ceejbot/go-loud
 go 1.12
 
 require (
+	github.com/ceejbot/vfp-culture-ships v0.0.0-20191007233304-a9e13159af3f
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grokify/html-strip-tags-go v0.0.0-20180907063347-e9e44961e26f

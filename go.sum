@@ -1,3 +1,5 @@
+github.com/ceejbot/vfp-culture-ships v0.0.0-20191007233304-a9e13159af3f h1:yfdJdr++GRnqwmo/TRcVFTCOF6h0N3R4502eJyCnjEE=
+github.com/ceejbot/vfp-culture-ships v0.0.0-20191007233304-a9e13159af3f/go.mod h1:aMeHQsOC3+T3lzZVR4OFN4XgppDjh5eSxp72uzTW9+s=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=

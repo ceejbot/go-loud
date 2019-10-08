@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode"
 
+	ships "github.com/ceejbot/vfp-culture-ships"
 	"github.com/go-redis/redis"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/joho/godotenv"
@@ -24,12 +25,17 @@ var channelsByName map[string]string
 var yellkey string
 var countkey string
 var catkey string
-var emojiPattern *regexp.Regexp
-var slackUserPattern *regexp.Regexp
-var puncPattern *regexp.Regexp
-var fuckityPattern *regexp.Regexp
-var malcolmPattern *regexp.Regexp
-var introPattern *regexp.Regexp
+
+// Regular expressions we'll use a whole lot.
+var patterns = map[string]*regexp.Regexp{
+	"emoji":       regexp.MustCompile(`:[^\t\n\f\r ]+:`),
+	"slack":       regexp.MustCompile(`<@[^\t\n\f\r ]+>`),
+	"punctuation": regexp.MustCompile(`[^a-zA-Z0-9]+`),
+	"fuckity":     regexp.MustCompile(`(?i)FUCKITY.?BYE`),
+	"malcolm":     regexp.MustCompile(`(?i)MALCOLM +TUCKER`),
+	"intro":       regexp.MustCompile(`(?i)LOUDBOT +INTRODUCE +YOURSELF`),
+	"ship":        regexp.MustCompile(`(?i)SHIP ?NAME`),
+}
 
 func makeRedis() (r *redis.Client) {
 	address, found := os.LookupEnv("REDIS_ADDRESS")
@@ -90,7 +96,7 @@ func report(event *slack.MessageEvent) bool {
 }
 
 func fuckityBye(event *slack.MessageEvent) bool {
-	if !fuckityPattern.MatchString(event.Text) {
+	if !patterns["fuckity"].MatchString(event.Text) {
 		return false
 	}
 
@@ -100,7 +106,7 @@ func fuckityBye(event *slack.MessageEvent) bool {
 }
 
 func summonTheMalc(event *slack.MessageEvent) bool {
-	if !malcolmPattern.MatchString(event.Text) {
+	if !patterns["malcolm"].MatchString(event.Text) {
 		return false
 	}
 
@@ -109,8 +115,17 @@ func summonTheMalc(event *slack.MessageEvent) bool {
 	return true
 }
 
+func ship(event *slack.MessageEvent) bool {
+	if !patterns["ship"].MatchString(event.Text) {
+		return false
+	}
+
+	yell(event, ships.Random())
+	return true
+}
+
 func introduction(event *slack.MessageEvent) bool {
-	if !introPattern.MatchString(event.Text) {
+	if !patterns["intro"].MatchString(event.Text) {
 		return false
 	}
 
@@ -169,9 +184,9 @@ func stripWhitespace(str string) string {
 func isLoud(msg string) bool {
 	// strip tags & emoji
 	input := stripWhitespace(msg)
-	input = emojiPattern.ReplaceAllLiteralString(input, "")
-	input = slackUserPattern.ReplaceAllLiteralString(input, "")
-	input = puncPattern.ReplaceAllLiteralString(input, "")
+	input = patterns["emoji"].ReplaceAllLiteralString(input, "")
+	input = patterns["slack"].ReplaceAllLiteralString(input, "")
+	input = patterns["punctuation"].ReplaceAllLiteralString(input, "")
 	input = strip.StripTags(input)
 
 	if len(input) < 3 {
@@ -251,15 +266,6 @@ func main() {
 	}
 	log.Printf("LOUDIE HAS %d THINGS TO YELL", card)
 
-	// Regular expressions we'll use a whole lot.
-	// Should probably be in an intialization function to the side.
-	emojiPattern = regexp.MustCompile(`:[^\t\n\f\r ]+:`)
-	slackUserPattern = regexp.MustCompile(`<@[^\t\n\f\r ]+>`)
-	puncPattern = regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	fuckityPattern = regexp.MustCompile(`(?i)FUCKITY.?BYE`)
-	malcolmPattern = regexp.MustCompile(`(?i)MALCOLM +TUCKER`)
-	introPattern = regexp.MustCompile(`(?i)LOUDBOT +INTRODUCE +YOURSELF`)
-
 	// Our special handlers. If they handled a message, they return true.
 	specials = []func(event *slack.MessageEvent) bool{
 		report,
@@ -267,6 +273,7 @@ func main() {
 		summonTheMalc,
 		introduction,
 		catfact,
+		ship,
 		yourBasicShout,
 	}
 
