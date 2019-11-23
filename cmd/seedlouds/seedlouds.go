@@ -74,8 +74,10 @@ func main() {
 
 	db := redis.NewClient(&redis.Options{Addr: address})
 	removeFromFile("SYSTEMANTICS", rkey, db)
+	removeFromFile("STAR_FIGHTING", rkey, db)
 	seedFromFile("SEEDS", rkey, db)
-	seedFromFile("STAR_FIGHTING", rkey, db)
 	rkey = fmt.Sprintf("%s:CATS", prefix)
 	seedFromFile("CATS", rkey, db)
+	rkey = fmt.Sprintf("%s:SW", prefix)
+	seedFromFile("STAR_FIGHTING", rkey, db)
 }

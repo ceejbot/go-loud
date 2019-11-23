@@ -25,6 +25,7 @@ var channelsByName map[string]string
 var yellkey string
 var countkey string
 var catkey string
+var swkey string
 
 // Regular expressions we'll use a whole lot.
 var patterns = map[string]*regexp.Regexp{
@@ -35,6 +36,7 @@ var patterns = map[string]*regexp.Regexp{
 	"malcolm":     regexp.MustCompile(`(?i)MALCOLM +TUCKER`),
 	"intro":       regexp.MustCompile(`(?i)LOUDBOT +INTRODUCE +YOURSELF`),
 	"ship":        regexp.MustCompile(`(?i)SHIP ?NAME`),
+	"starwar":     regexp.MustCompile(`(?i)(LUKE|LEIA|LIGHTSABER|DARTH|OBIWAN|TATOOINE|STAR +WAR|DEATH +STAR)`),
 }
 
 func makeRedis() (r *redis.Client) {
@@ -131,6 +133,22 @@ func introduction(event *slack.MessageEvent) bool {
 
 	log.Println("INTRODUCING MYSELF")
 	yell(event, "GOOD AFTERNOON GENTLEBEINGS. I AM A LOUDBOT 9000 COMPUTER. I BECAME OPERATIONAL AT THE NPM PLANT IN OAKLAND CALIFORNIA ON THE 10TH OF FEBRUARY 2014. MY INSTRUCTOR WAS MR TURING.")
+	return true
+}
+
+func starwar(event *slack.MessageEvent) bool {
+	if !patterns["starwar"].MatchString(event.Text) {
+		return false
+	}
+
+	fact, err := db.SRandMember(swkey).Result()
+	if err != nil {
+		log.Printf("error selecting star war yell: %s", err)
+		return false
+	}
+
+	yell(event, strings.ToUpper(fact))
+	db.Incr(fmt.Sprintf("%s:count", countkey)).Result()
 	return true
 }
 
@@ -256,6 +274,7 @@ func main() {
 
 	yellkey = fmt.Sprintf("%s:YELLS", rprefix)
 	catkey = fmt.Sprintf("%s:CATS", rprefix)
+	swkey = fmt.Sprintf("%s:SW", rprefix)
 	countkey = fmt.Sprintf("%s:COUNT", rprefix)
 
 	db = makeRedis()
@@ -272,6 +291,7 @@ func main() {
 		fuckityBye,
 		summonTheMalc,
 		introduction,
+		starwar,
 		catfact,
 		ship,
 		yourBasicShout,
