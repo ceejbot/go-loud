@@ -31,12 +31,12 @@ var swkey string
 var patterns = map[string]*regexp.Regexp{
 	"emoji":       regexp.MustCompile(`:[^\t\n\f\r ]+:`),
 	"slack":       regexp.MustCompile(`<@[^\t\n\f\r ]+>`),
-	"punctuation": regexp.MustCompile(`[^a-zA-Z0-9]+`),
+	"punctuation": regexp.MustCompile(`[^a-zA-Z]+`),
 	"fuckity":     regexp.MustCompile(`(?i)FUCKITY.?BYE`),
 	"malcolm":     regexp.MustCompile(`(?i)MALCOLM +TUCKER`),
 	"intro":       regexp.MustCompile(`(?i)LOUDBOT +INTRODUCE +YOURSELF`),
 	"ship":        regexp.MustCompile(`(?i)SHIP ?NAME`),
-	"starwar":     regexp.MustCompile(`(?i)(LUKE|LEIA|LIGHTSABER|DARTH|OBIWAN|TATOOINE|STAR +WAR|DEATH +STAR)`),
+	"starwar":     regexp.MustCompile(`(?i)(LUKE|LEIA|LIGHTSABER|DARTH|OBIWAN|KENOBI|CHEWIE|CHEWBACCA|TATOOINE|STAR +WAR|DEATH +STAR)`),
 }
 
 func makeRedis() (r *redis.Client) {
