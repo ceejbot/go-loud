@@ -1,0 +1,32 @@
+name: Release LOUDBOT
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    name: Release LOUDBOT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Release LOUDBOT"
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_APPNAME: ${{ secrets.REGISTRY_APPNAME }}
+          REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          expected="REGISTRY_USERNAME REGISTRY_PASSWORD REGISTRY_URL REGISTRY_APPNAME"
+          for expect in $expected; do
+            if [[ -z "${!expect}" ]]; then
+              echo "Missing Github Secret: $expect"
+              exit 1
+            fi
+          done
+          tag=$(git describe --tags)
+          echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" -u="$REGISTRY_USERNAME" --password-stdin
+          docker build -t loudbot-local .
+          docker tag loudbot-local ${REGISTRY_URL}/${REGISTRY_APPNAME}:${tag}
+          docker push ${REGISTRY_URL}/${REGISTRY_APPNAME}:${tag}
+          
